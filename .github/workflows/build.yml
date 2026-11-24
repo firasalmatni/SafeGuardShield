@@ -1,4 +1,4 @@
-name: Build SafeGuardShield Lightweight EXE
+name: Build Ultra-Light SafeGuardShield EXE
 
 on:
   push:
@@ -18,33 +18,49 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install UPX for maximum size compression
+      - name: Install UPX
         run: choco install upx -y
 
-      - name: Install lightweight dependencies only
+      - name: Install minimal dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install mss numpy pillow onnxruntime pystray pyinstaller
+          pip install mss numpy onnxruntime pyinstaller
 
-      - name: Build ultra-light single EXE (with UAC Admin elevation)
+      - name: Build ultra-light single EXE
+        shell: pwsh
         run: |
-          pyinstaller --noconfirm --onefile --windowed --uac-admin `
+          pyinstaller --noconfirm --clean --onefile --windowed --uac-admin `
             --name "SafeGuardShield" `
             --upx-dir "C:\ProgramData\chocolatey\bin" `
             --collect-binaries onnxruntime `
-            --hidden-import pystray._win32 `
-            --hidden-import PIL._tkinter_finder `
+            --exclude-module onnxruntime.quantization `
+            --exclude-module onnxruntime.transformers `
+            --exclude-module onnxruntime.tools `
+            --exclude-module onnxruntime.training `
+            --exclude-module PIL `
+            --exclude-module pystray `
+            --exclude-module cv2 `
             --exclude-module PyQt6 `
             --exclude-module PyQt5 `
-            --exclude-module cv2 `
             --exclude-module matplotlib `
             --exclude-module scipy `
             --exclude-module pandas `
             --exclude-module unittest `
             --exclude-module pydoc `
+            --exclude-module sqlite3 `
+            --exclude-module multiprocessing `
+            --exclude-module xmlrpc `
+            --exclude-module pdb `
+            --exclude-module doctest `
+            --exclude-module lib2to3 `
+            --exclude-module test `
+            --exclude-module distutils `
+            --exclude-module turtle `
+            --exclude-module turtledemo `
+            --exclude-module idlelib `
             safeguard_shield.py
 
-      - name: Check final EXE size
+      - name: Print final EXE size
         shell: pwsh
         run: |
           $sizeMB = [math]::Round((Get-Item "dist\SafeGuardShield.exe").Length / 1MB, 2)
@@ -53,5 +69,5 @@ jobs:
       - name: Upload EXE Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: SafeGuardShield-Lightweight-EXE
+          name: SafeGuardShield-UltraLight-EXE
           path: dist/SafeGuardShield.exe
