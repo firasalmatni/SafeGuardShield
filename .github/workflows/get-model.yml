@@ -1,0 +1,22 @@
+name: Download 640m Model
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/get-model.yml'
+
+jobs:
+  fetch-model:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download 640m.onnx
+        run: |
+          curl -L -f -o 640m.onnx "https://github.com/notAI-tech/NudeNet/releases/download/v3.4-weights/640m.onnx"
+          ls -lh 640m.onnx
+
+      - name: Upload Model Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-640m
+          path: 640m.onnx
