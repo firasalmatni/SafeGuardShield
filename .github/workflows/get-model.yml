@@ -10,13 +10,35 @@ jobs:
   fetch-model:
     runs-on: ubuntu-latest
     steps:
-      - name: Download 640m.onnx
+      - name: Download 640m.onnx via GitHub API
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          curl -L -f -o 640m.onnx "https://github.com/notAI-tech/NudeNet/releases/download/v3.4-weights/640m.onnx"
+          ASSET_URL=$(curl -fsSL \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            "https://api.github.com/repos/notAI-tech/NudeNet/releases" \
+            | python3 -c "import sys, json; rels=json.load(sys.stdin); print(next((a['url'] for r in rels for a in r.get('assets',[]) if '640m.onnx' in a['name'].lower()), 'https://api.github.com/repos/notAI-tech/NudeNet/releases/assets/176832019'))")
+
+          echo "Asset API URL: $ASSET_URL"
+
+          curl -fL \
+            -H "Accept: application/octet-stream" \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -o 640m.onnx \
+            "$ASSET_URL"
+
+          SIZE=$(stat -c%s 640m.onnx)
+          echo "Downloaded file size: $SIZE bytes"
           ls -lh 640m.onnx
+
+          if [ "$SIZE" -lt 50000000 ]; then
+            echo "ERROR: Downloaded file is too small (not the real ONNX model)."
+            exit 1
+          fi
 
       - name: Upload Model Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: model-640m
+          name: model-640m-full
           path: 640m.onnx
